@@ -180,7 +180,7 @@ def financeduck(event=None, context=None):
     noun = "My analysis concludes that it's because this "
     verb = "My analysis concludes that you should "
     num = "My analysis concludes that the root cause is numeric. Here are "
-    neither = "My analysis concludes that it's because "
+    none_of_these = "My analysis concludes that it's because "
 
     # Now we want to randomly select a duck message based on whether the market finished up or down.
     def duck_message(market_up, market_down, price_string):
@@ -233,7 +233,7 @@ def financeduck(event=None, context=None):
         elif first_word == "NUM":
             return num
         else:
-            return neither
+            return none_of_these
 
     anchor = link_phrase(first_word, verb, noun, neither)
 
