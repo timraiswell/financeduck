@@ -4,12 +4,12 @@ import boto3, json, random, re, requests, datetime, holidays, tweepy, config, ti
 # Authenticate to Twitter
 auth = tweepy.OAuthHandler(config.CONSUMER_TOKEN, config.CONSUMER_SECRET)
 auth.set_access_token(config.ACCESS_TOKEN, config.ACCESS_SECRET)
-# Set up API access 
+# Set up API access
 api = tweepy.API(auth)
 
 
 def financeduck(event=None, context=None):
-    # Set the headless browser header 
+    # Set the headless browser header
     user_agent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/35.0.1916.47 Safari/537.36"
     headers = {"User-Agent": user_agent}
     # Create title and link lists for manipulation
@@ -19,76 +19,70 @@ def financeduck(event=None, context=None):
     # Scraping from The Dodo
     try:
         dodo_url = "https://www.thedodo.com/close-to-home"
-    
+
         response = requests.get(dodo_url, headers=headers)
         dodo_soup = BeautifulSoup(response.content, "html.parser")
-    
+
         dodo_list = dodo_soup.findAll(
             "a", attrs={"class": "double-column-listing__link u-block-link ga-trigger"}
         )
-    
+
         [link_list.append(i["href"]) for i in dodo_list]
-    
+
         for i in dodo_list:
             title_list.append(i.find("h2").text.strip())
     except:
         pass
-    
-    # Huffpost Scrape
+
+    # Google News Scrape
     time.sleep(0.5)
-    
+
     try:
-        huff_url = "https://www.huffpost.com/entertainment/topic/cute-animals"
-        huff_response = requests.get(huff_url, headers=headers)
-        huff_soup = BeautifulSoup(huff_response.content, "html.parser")
-    
-        """
-        Ditto here. We're just looking for a list of stories 
-        that updates roughly daily. 
-        """
-    
-        huff_list = huff_soup.findAll(
-            "a", attrs={"class": "card__headline card__headline--long"}
-        )
-    
-        for link in huff_list:
-            link_list.append(link["href"])
-    
-        for title in huff_list:
-            title_list.append(title.find("h2").text.strip())
+        goog_url = "https://news.google.com/rss/search?q={funny+animals}"
+        response = requests.get(goog_url, headers=headers)
+
+        goog_soup = BeautifulSoup(response.content, "html.parser")
+
+        goog_list = goog_soup.findAll("item")
+
+        for title in goog_list:
+            title_list.append(title.find("title").text.strip())
+
+        for link in goog_list:
+            link_list.append(re.findall("<link/>(.*?)<guid", str(link))[0])
     except:
         pass
-            
-         # Buzzpaws Scrape
+
+    # Buzzpaws Scrape
     time.sleep(0.5)
-    
+
     try:
         url = "http://www.buzzpaws.com/"
         response = requests.get(url, headers=headers)
         buzz_soup = BeautifulSoup(response.content, "html.parser")
-    
+
         buzz_list = buzz_soup.findAll(
             "div", attrs={"class": "content-thumb content-list-thumb"}
         )
-    
+
         for link in buzz_list:
             link_list.append(link.find("a")["href"])
-    
+
         for title in buzz_list:
             title_list.append(title.find("a")["title"])
     except:
         pass
-    
+
     # Analyze sentiment
 
     client = boto3.client("comprehend")
     sentiment = []
-    
+
     for sentence in title_list:
         sentiment.append(
             client.detect_sentiment(Text=sentence, LanguageCode="en")["Sentiment"]
         )
-        
+
     # Render titles into lower case for later publishing
     title_list = [x.lower() for x in title_list]
 
@@ -164,9 +158,11 @@ def financeduck(event=None, context=None):
 
     market_down = [
         "Dang it. Markets wet the bed.",
+        "Release the QUACKEN! Market down.",
         "Whatever. I don't even care that the markets finished down.",
         "Well I'll be a lune's uncle; the markets finished down.",
         "Pfffft. Stupid markets. They finished (eider)down. Ohhhhhhhhh...",
+        "Quack. Not even once.",
         "Nnnnggg, bahhhhh.",
         "Snap. Markets down a bit.",
         """
@@ -183,6 +179,7 @@ def financeduck(event=None, context=None):
 
     noun = "My analysis concludes that it's because this "
     verb = "My analysis concludes that you should "
+    num = "My analysis concludes that the root cause is numeric. Here are "
     neither = "My analysis concludes that it's because "
 
     # Now we want to randomly select a duck message based on whether the market finished up or down.
@@ -233,6 +230,8 @@ def financeduck(event=None, context=None):
             return verb
         elif first_word == "NOUN":
             return noun
+        elif first_word == "NUM":
+            return num
         else:
             return neither
 
@@ -255,8 +254,8 @@ def financeduck(event=None, context=None):
         + ":\n"
         + link
     )
-    # Check the tweet will pass length criteria (280 max); 
-    # The auto URL shorterner scales back max potential tweet. 
+    # Check the tweet will pass length criteria (280 max);
+    # The auto URL shorterner scales back max potential tweet.
     if len(tweet) > 320:
         financeduck()
     else:
@@ -273,9 +272,8 @@ else:
         message = financeduck()
     except:
         message = "uh oh, Duck 404. Back to the quacking board."
-    
 
-# Tweet message     
+
+# Tweet message
 api.update_status(message)
-        
-        
+
