@@ -7,7 +7,7 @@ Finance Duck a is a python-based Twitter bot ([@financeduck](https://twitter.com
 * Serverless Twitter bot
 * Built in python
 * Uses Amazon's Comprehend API for sentiment analysis and syntactic parsing
-* Grabs the closing price of the S&P 500 and "explains" the price change with a cut animal story
-* Scraoes animal stories using the `requests` and `bs4` libraries.
+* Grabs the closing price of the S&P 500 and "explains" the price change with a cute animal story
+* Scrapes animal stories using the `requests` and `bs4` libraries.
  
  `git clone "https://github.com/timraiswell/financeduck/"`
