@@ -38,12 +38,12 @@ def financeduck(event=None, context=None):
     time.sleep(0.5)
 
     try:
-        goog_url = "https://news.google.com/rss/search?q={funny+animals}"
+        goog_url = "https://news.google.com/rss/search?q={cute+animals}"
         response = requests.get(goog_url, headers=headers)
 
         goog_soup = BeautifulSoup(response.content, "html.parser")
 
-        goog_list = goog_soup.findAll("item")
+        goog_list = goog_soup.findAll("item")[:15]
 
         for title in goog_list:
             title_list.append(title.find("title").text.strip())
@@ -225,7 +225,7 @@ def financeduck(event=None, context=None):
         "SyntaxTokens"
     ][0]["PartOfSpeech"]["Tag"]
 
-    def link_phrase(first_word, verb, noun, neither):
+    def link_phrase(first_word, verb, noun, none_of_these):
         if first_word == "VERB":
             return verb
         elif first_word == "NOUN":
@@ -235,7 +235,7 @@ def financeduck(event=None, context=None):
         else:
             return none_of_these
 
-    anchor = link_phrase(first_word, verb, noun, neither)
+    anchor = link_phrase(first_word, verb, noun, none_of_these)
 
     """
     Link extraction from data frame. 
@@ -272,7 +272,6 @@ else:
         message = financeduck()
     except:
         message = "uh oh, Duck 404. Back to the quacking board."
-
 
 # Tweet message
 api.update_status(message)
